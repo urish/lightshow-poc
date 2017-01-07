@@ -1,3 +1,19 @@
+function sum(arr) {
+    return arr.reduce((x, y) => x + y);
+}
+
+function min(arr) {
+    return arr.reduce((x, y) => Math.min(x, y));
+}
+
+function max(arr) {
+    return arr.reduce((x, y) => Math.max(x, y));
+}
+
+function avg(arr) {
+    return sum(arr) / arr.length;
+}
+
 async function lightShow() {
     let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     const audioCtx = new AudioContext();
@@ -16,14 +32,26 @@ async function lightShow() {
     }
 
     const colors = [];
+    let sampleWindow = [];
+    let cindex = 0;
     setInterval(() => {
         analyser.getByteFrequencyData(dataArray);
-        let sum = 0;
-        for (let i = 0; i < 20; i++) {
-            sum = Math.max(sum, dataArray[i]);
+        let bass = avg(Array.from(dataArray).slice(0, 20));
+        let black = false;
+        
+        if (sampleWindow.length > 5) {
+            sampleWindow.pop();
+            let sampleMin = min(sampleWindow);
+            if (!black && bass < sampleMin) {
+                cindex = (cindex + 36 % 360);
+                black = true;
+            } else {
+                black = false;
+            }
         }
+        sampleWindow.unshift(bass);
 
-        colors.unshift(`rgb(${sum > 150 ? (sum - 150) * 5 : 0}, 0, 0)`);
+        colors.unshift(`hsl(${cindex}, 50%, ${black ? 0 : (bass / 2.5)}%)`);
         if (colors.length > nodes.length) {
             colors.pop();
         }
@@ -31,8 +59,7 @@ async function lightShow() {
         for (let i = 0; i < colors.length; i++) {
             nodes[i].style.backgroundColor = colors[i];
         }
-        console.log('sampl', sum);
-    }, 100);
+    }, 50);
 }
 
 lightShow();
