@@ -15,7 +15,9 @@ function avg(arr) {
 }
 
 async function lightShow() {
-    let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const socket = io();
+    socket.binaryType = 'arraybuffer';
     const audioCtx = new AudioContext();
     const source = audioCtx.createMediaStreamSource(stream);
     const analyser = audioCtx.createAnalyser();
@@ -38,10 +40,12 @@ async function lightShow() {
         analyser.getByteFrequencyData(dataArray);
         let bass = avg(Array.from(dataArray).slice(0, 20));
         let black = false;
+        let maxBeat = false;
         
         if (sampleWindow.length > 5) {
             sampleWindow.pop();
             let sampleMin = min(sampleWindow);
+            maxBeat = bass > max(sampleWindow);
             if (!black && bass < sampleMin) {
                 cindex = (cindex + 36 % 360);
                 black = true;
@@ -51,15 +55,26 @@ async function lightShow() {
         }
         sampleWindow.unshift(bass);
 
-        colors.unshift(`hsl(${cindex}, 50%, ${black ? 0 : (bass / 2.5)}%)`);
+        colors.unshift(`hsl(${cindex % 360}, 100%, ${black ? 0 : (bass / 2.5)}%)`);
         if (colors.length > nodes.length) {
             colors.pop();
         }
 
+        const ab = new ArrayBuffer(colors.length * 3);
+        const dv = new Uint8Array(ab);
         for (let i = 0; i < colors.length; i++) {
-            nodes[i].style.backgroundColor = colors[i];
+            let color = tinycolor(colors[i]);
+            if (maxBeat) {
+                color = tinycolor(`hsl(${cindex % 360}, 100%, ${black ? 0 : (bass / 2.5)}%)`);
+            }
+            nodes[i].style.backgroundColor = color.toRgbString();
+            let rgb = color.toRgb();
+            dv[i*3] = rgb.r;
+            dv[i*3+1] = rgb.g;
+            dv[i*3+2] = rgb.b;
         }
-    }, 50);
+        socket.emit('message', ab);
+    }, 20);
 }
 
 lightShow();
