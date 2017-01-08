@@ -1,3 +1,5 @@
+const ledCount = 144;
+
 function sum(arr) {
     return arr.reduce((x, y) => x + y);
 }
@@ -26,7 +28,7 @@ async function lightShow() {
     source.connect(analyser);
 
     const nodes = [];
-    for (let i = 0; i < 144; i++) {
+    for (let i = 0; i < ledCount; i++) {
         let node = document.createElement('span');
         node.className = 'led-node';
         document.querySelector('#container').appendChild(node);
@@ -60,7 +62,7 @@ async function lightShow() {
             colors.pop();
         }
 
-        const ab = new ArrayBuffer(colors.length * 3);
+        const ab = new ArrayBuffer(ledCount * 3);
         const dv = new Uint8Array(ab);
         for (let i = 0; i < colors.length; i++) {
             let color = tinycolor(colors[i]);
