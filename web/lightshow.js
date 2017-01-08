@@ -47,7 +47,7 @@ async function lightShow() {
             let sampleMin = min(sampleWindow);
             maxBeat = bass > max(sampleWindow);
             if (!black && bass < sampleMin) {
-                cindex = (cindex + 36 % 360);
+                cindex = (cindex + 2 % 360);
                 black = true;
             } else {
                 black = false;
